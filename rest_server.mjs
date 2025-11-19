@@ -57,16 +57,24 @@ function dbRun(query, params) {
  ***   REST REQUEST HANDLERS                                      *** 
  ********************************************************************/
 
-//adds codes to JSON array
-function getValues(rows, param1, param2){
-    let codes = [];
+/**
+ * Builds an array of javascript object with the given attributes
+ *
+ * @param [] rows stores all rows given from database
+ * @param [] attributes store all attributes of the tables, eg codes would give code and incident types
+ * @returns [] with all javascript objects
+ */
+function getValues(rows, attributes){
+    let values = [];
     for(let i = 0; i < rows.length; i++){
-    codes.push({param1 : rows[i][param1],
-                param2 : rows[i][param2]
-    });
+        let object = {};
+        for(let j = 0; j < attributes.length; j++){
+            object[attributes[j]] = rows[i][attributes[j]];
+        }
+        values.push(object);
     }
-    return codes;
-}''
+    return values
+}
 // GET request handler for crime codes
 app.get('/codes', (req, res) => {
     if('code' in req.query){
@@ -75,7 +83,7 @@ app.get('/codes', (req, res) => {
                 res.status(500).type('txt').send('SQL Error');
             }
             else{
-                let codes = getValues(rows, 'code', 'incident_type');
+                let codes = getValues(rows, ['code', 'incident_type']);
                 res.status(200).type('json').send({codes}); // <-- you will need to change this
                 }
         });
@@ -86,7 +94,7 @@ app.get('/codes', (req, res) => {
                 res.status(500).type('txt').send('SQL Error');
             }
             else{
-                let codes = getValues(rows, 'code', 'incident_type');
+                let codes = getValues(rows, ['code', 'incident_type']);
                 res.status(200).type('json').send({codes}); // <-- you will need to change this
             }
         });
@@ -102,7 +110,7 @@ app.get('/neighborhoods', (req, res) => {
                 res.status(500).type('txt').send('SQL Error');
             }
             else{
-                let neighborhoods = getValues(rows, 'neighborhood_number', 'neighborhood_name');
+                let neighborhoods = getValues(rows, ['neighborhood_number', 'neighborhood_name']);
                 res.status(200).type('json').send({neighborhoods}); // <-- you will need to change this
             }
         });
@@ -113,7 +121,7 @@ app.get('/neighborhoods', (req, res) => {
                 res.status(500).type('txt').send('SQL Error');
             }
             else{
-                let neighborhoods = getValues(rows, 'neighborhood_number', 'neighborhood_name');
+                let neighborhoods = getValues(rows, ['neighborhood_number', 'neighborhood_name']);
                 res.status(200).type('json').send({neighborhoods}); // <-- you will need to change this
             }
         });
