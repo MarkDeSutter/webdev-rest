@@ -25,7 +25,7 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READWRITE, (err) => {
     }
 });
 
-// Create Promise for SQLite3 database SELECT query 
+// Create Promise for SQLite3 database SELECT query
 function dbSelect(query, params) {
     return new Promise((resolve, reject) => {
         db.all(query, params, (err, rows) => {
@@ -56,18 +56,68 @@ function dbRun(query, params) {
 /********************************************************************
  ***   REST REQUEST HANDLERS                                      *** 
  ********************************************************************/
+
+//adds codes to JSON array
+function getValues(rows, param1, param2){
+    let codes = [];
+    for(let i = 0; i < rows.length; i++){
+    codes.push({param1 : rows[i][param1],
+                param2 : rows[i][param2]
+    });
+    }
+    return codes;
+}''
 // GET request handler for crime codes
 app.get('/codes', (req, res) => {
-    console.log(req.query); // query object (key-value pairs after the ? in the url)
+    if('code' in req.query){
+        db.all('SELECT * FROM Codes WHERE code IN (' + req.query.code + ')', (err, rows) => {
+            if(err){
+                res.status(500).type('txt').send('SQL Error');
+            }
+            else{
+                let codes = getValues(rows, 'code', 'incident_type');
+                res.status(200).type('json').send({codes}); // <-- you will need to change this
+                }
+        });
+    }
+    else{
+        db.all('SELECT * FROM Codes', (err, rows) => {
+            if(err){
+                res.status(500).type('txt').send('SQL Error');
+            }
+            else{
+                let codes = getValues(rows, 'code', 'incident_type');
+                res.status(200).type('json').send({codes}); // <-- you will need to change this
+            }
+        });
+    }
     
-    res.status(200).type('json').send({}); // <-- you will need to change this
 });
 
 // GET request handler for neighborhoods
 app.get('/neighborhoods', (req, res) => {
-    console.log(req.query); // query object (key-value pairs after the ? in the url)
-    
-    res.status(200).type('json').send({}); // <-- you will need to change this
+    if('id' in req.query){
+        db.all('SELECT * FROM Neighborhoods WHERE neighborhood_number IN (' + req.query.id + ')', (err, rows) => {
+            if(err){
+                res.status(500).type('txt').send('SQL Error');
+            }
+            else{
+                let neighborhoods = getValues(rows, 'neighborhood_number', 'neighborhood_name');
+                res.status(200).type('json').send({neighborhoods}); // <-- you will need to change this
+            }
+        });
+    }
+    else{
+        db.all('SELECT * FROM Neighborhoods', (err, rows) => {
+            if(err){
+                res.status(500).type('txt').send('SQL Error');
+            }
+            else{
+                let neighborhoods = getValues(rows, 'neighborhood_number', 'neighborhood_name');
+                res.status(200).type('json').send({neighborhoods}); // <-- you will need to change this
+            }
+        });
+    }
 });
 
 // GET request handler for crime incidents
