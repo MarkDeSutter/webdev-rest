@@ -2,7 +2,7 @@ Mark
     first 2 get methods
 
 Ibrahim
-    thrid get method
+    third get method + additional features
 
 Jair
-    put and delete
+    FINISHED PUT AND DELETE

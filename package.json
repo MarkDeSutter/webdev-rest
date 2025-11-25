@@ -6,8 +6,14 @@
         "name": "Mark DeSutter",
         "email": "desu5994@stthomas.edu"
     },
-    "contributors": ["Mark DeSutter", "Jair Garces Vargas", "Ibrahima Ka"],
-    "repository": {"url" : "https://github.com/MarkDeSutter/webdev-rest"},
+    "contributors": [
+        "Mark DeSutter",
+        "Jair Garces Vargas",
+        "Ibrahima Ka"
+    ],
+    "repository": {
+        "url": "https://github.com/MarkDeSutter/webdev-rest"
+    },
     "dependencies": {
         "express": "^4.21.2",
         "sqlite3": "^5.1.7"

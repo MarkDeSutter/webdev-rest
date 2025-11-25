@@ -136,18 +136,97 @@ app.get('/incidents', (req, res) => {
 });
 
 // PUT request handler for new crime incident
-app.put('/new-incident', (req, res) => {
-    console.log(req.body); // uploaded data
-    
-    res.status(200).type('txt').send('OK'); // <-- you may need to change this
+app.put('/new-incident', async (req, res) => {
+    console.log(req.body);
+
+    let {
+        case_number,
+        date,
+        time,
+        code,
+        incident,
+        police_grid,
+        neighborhood_number,
+        block
+    } = req.body;
+
+    // Validate required fields
+    if (!case_number || !date || !time || !code || !incident || !police_grid || !neighborhood_number || !block) {
+        return res.status(500).type('txt').send('Missing required field');
+    }
+
+    try {
+        // check for duplicate case_number
+        let rows = await dbSelect(
+            "SELECT case_number FROM Incidents WHERE case_number = ?",
+            [case_number]
+        );
+
+        if (rows.length > 0) {
+            return res.status(500).type('txt').send("Error: case number already exists");
+        }
+
+        // Insert new incident
+        await dbRun(
+            `INSERT INTO Incidents 
+            (case_number, date_time, code, incident, police_grid, neighborhood_number, block)
+            VALUES (?, datetime(? || ' ' || ?), ?, ?, ?, ?, ?)`,
+            [
+                case_number,
+                date,
+                time,
+                code,
+                incident,
+                police_grid,
+                neighborhood_number,
+                block
+            ]
+        );
+
+        res.status(200).type('txt').send('success');
+    }
+    catch (err) {
+        console.log(err);
+        res.status(500).type('txt').send('SQL Error');
+    }
 });
 
+
 // DELETE request handler for new crime incident
-app.delete('/remove-incident', (req, res) => {
-    console.log(req.body); // uploaded data
-    
-    res.status(200).type('txt').send('OK'); // <-- you may need to change this
+app.delete('/remove-incident', async (req, res) => {
+    console.log(req.body);
+
+    let { case_number } = req.body;
+
+    if (!case_number) {
+        return res.status(500).type('txt').send('Missing case_number');
+    }
+
+    try {
+        // Check if case_number exists
+        let rows = await dbSelect(
+            "SELECT case_number FROM Incidents WHERE case_number = ?",
+            [case_number]
+        );
+
+        if (rows.length === 0) {
+            return res.status(500).type('txt').send('Error: case number does not exist');
+        }
+
+        // Delete it
+        await dbRun(
+            "DELETE FROM Incidents WHERE case_number = ?",
+            [case_number]
+        );
+
+        res.status(200).type('txt').send('success');
+    }
+    catch (err) {
+        console.log(err);
+        res.status(500).type('txt').send('SQL Error');
+    }
 });
+
 
 /********************************************************************
  ***   START SERVER                                               *** 
