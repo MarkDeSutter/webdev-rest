@@ -130,9 +130,58 @@ app.get('/neighborhoods', (req, res) => {
 
 // GET request handler for crime incidents
 app.get('/incidents', (req, res) => {
-    console.log(req.query); // query object (key-value pairs after the ? in the url)
+    let query = "SELECT * from Incidents";
+    let params = [];
+
+    //start
+    if(req.query.start_date) {
+        params.push("date >= '" + req.query.start_date + "'");
+    }
+    //end
+    if(req.query.end_date) {
+        params.push("date <= '" + req.query.end_date + "'");
+    }
+    //code
+    if(req.query.code) {
+        params.push("code IN (" + req.query.code + ")");
+    }
+    //grid
+    if(req.query.grid) {
+        params.push("police_grid IN (" + req.query.grid + ")");
+    }
+    //neighborhood
+    if(req.query.neighborhood) {
+        params.push("neighborhood_nummber IN (" + req.query.neghborhood + ")");
+    }
+
+
+    if (params.length >0) {
+        query += " WHERE " + params.join(" AND ");
+    }
+
+
+    //limit
+    query += " ORDER BY date DESC";
+    if(req.query.limit) {
+        query += " LIMIT " + req.query.limit;
+    }
+    else {
+        query += " LIMIT 50";
+    }
+
+
+    console.log(query);
+
+    db.all(query, (err, rows) => {
+        if (err) {
+            console.log(err);
+            res.status(500).type('txt').send('SQL error');
+        }
+        else {
+            res.status(200).type('json').send(rows);
+        }
+    });
     
-    res.status(200).type('json').send({}); // <-- you will need to change this
 });
 
 // PUT request handler for new crime incident
