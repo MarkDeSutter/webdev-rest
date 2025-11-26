@@ -136,11 +136,9 @@ app.get('/incidents', (req, res) => {
     //start
     if(req.query.start_date) {
         params.push("date_time >= '" + req.query.start_date + "'");
-        params.push("date_time >= '" + req.query.start_date + "'");
     }
     //end
     if(req.query.end_date) {
-        params.push("date_time <= '" + req.query.end_date + "'");
         params.push("date_time <= '" + req.query.end_date + "'");
     }
     //code
@@ -163,7 +161,6 @@ app.get('/incidents', (req, res) => {
 
 
     //limit
-    query += " ORDER BY date_time DESC";
     query += " ORDER BY date_time DESC";
     if(req.query.limit) {
         query += " LIMIT " + req.query.limit;
