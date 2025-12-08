@@ -11,6 +11,12 @@ const port = 8000;
 
 let app = express();
 app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080'); // Allow requests from this origin
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS'); // Allow these methods
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allow these headers
+  next();
+});
 
 /********************************************************************
  ***   DATABASE FUNCTIONS                                         *** 
@@ -77,55 +83,36 @@ function getValues(rows, attributes){
 }
 // GET request handler for crime codes
 app.get('/codes', (req, res) => {
+    let query = 'SELECT * FROM Codes';
     if('code' in req.query){
-        db.all('SELECT * FROM Codes WHERE code IN (' + req.query.code + ')', (err, rows) => {
-            if(err){
-                res.status(500).type('txt').send('SQL Error');
-            }
-            else{
-                let codes = getValues(rows, ['code', 'incident_type']);
-                res.status(200).type('json').send({codes}); // <-- you will need to change this
-                }
-        });
+        query = 'SELECT * FROM Codes WHERE code IN (' + req.query.code + ')'
     }
-    else{
-        db.all('SELECT * FROM Codes', (err, rows) => {
-            if(err){
-                res.status(500).type('txt').send('SQL Error');
+    db.all(query, (err, rows) => {
+        if(err){
+            res.status(500).type('txt').send('SQL Error');
+        }
+        else{
+            let codes = getValues(rows, ['code', 'incident_type']);
+            res.status(200).type('json').send(codes); // <-- you will need to change this
             }
-            else{
-                let codes = getValues(rows, ['code', 'incident_type']);
-                res.status(200).type('json').send({codes}); // <-- you will need to change this
-            }
-        });
-    }
-    
+    });
 });
 
 // GET request handler for neighborhoods
 app.get('/neighborhoods', (req, res) => {
+    let query = 'SELECT * FROM Neighborhoods';
     if('id' in req.query){
-        db.all('SELECT * FROM Neighborhoods WHERE neighborhood_number IN (' + req.query.id + ')', (err, rows) => {
-            if(err){
-                res.status(500).type('txt').send('SQL Error');
-            }
-            else{
-                let neighborhoods = getValues(rows, ['neighborhood_number', 'neighborhood_name']);
-                res.status(200).type('json').send({neighborhoods}); // <-- you will need to change this
-            }
-        });
+        query = 'SELECT * FROM Neighborhoods WHERE neighborhood_number IN (' + req.query.id + ')';
     }
-    else{
-        db.all('SELECT * FROM Neighborhoods', (err, rows) => {
-            if(err){
-                res.status(500).type('txt').send('SQL Error');
-            }
-            else{
-                let neighborhoods = getValues(rows, ['neighborhood_number', 'neighborhood_name']);
-                res.status(200).type('json').send({neighborhoods}); // <-- you will need to change this
-            }
-        });
-    }
+    db.all(query, (err, rows) => {
+        if(err){
+            res.status(500).type('txt').send('SQL Error');
+        }
+        else{
+            let neighborhoods = getValues(rows, ['neighborhood_number', 'neighborhood_name']);
+             res.status(200).type('json').send(neighborhoods); // <-- you will need to change this
+        }
+    });
 });
 
 // GET request handler for crime incidents
@@ -172,13 +159,27 @@ app.get('/incidents', (req, res) => {
 
     //console.log(query);
 
+    let incidents = []
     db.all(query, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500).type('txt').send('SQL error');
         }
         else {
-            res.status(200).type('json').send(rows);
+            for(let row of rows){
+                incidents.push({
+                    case_number: row.case_number,
+                    date: row.date_time.substring(0, row.date_time.indexOf('T')),
+                    time: row.date_time.substring(row.date_time.indexOf('T') + 1),
+                    code: row.code,
+                    incident: row.incident,
+                    police_grid: row.police_grid,
+                    neighborhood_number: row.neighborhood_number,
+                    block: row.block
+                });
+            }
+            console.log(rows);
+            res.status(200).type('json').send(incidents);
         }
     });
     
@@ -188,7 +189,7 @@ app.get('/incidents', (req, res) => {
 app.put('/new-incident', async (req, res) => {
     console.log(req.body);
 
-    let {
+    let{
         case_number,
         date,
         time,
