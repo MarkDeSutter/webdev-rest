@@ -178,7 +178,7 @@ app.get('/incidents', (req, res) => {
                     block: row.block
                 });
             }
-            console.log(rows);
+            //console.log(rows);
             res.status(200).type('json').send(incidents);
         }
     });
