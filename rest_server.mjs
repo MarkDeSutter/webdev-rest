@@ -11,6 +11,12 @@ const port = 8000;
 
 let app = express();
 app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080'); // Allow requests from this origin
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS'); // Allow these methods
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allow these headers
+  next();
+});
 
 /********************************************************************
  ***   DATABASE FUNCTIONS                                         *** 
@@ -77,69 +83,114 @@ function getValues(rows, attributes){
 }
 // GET request handler for crime codes
 app.get('/codes', (req, res) => {
+    let query = 'SELECT * FROM Codes';
     if('code' in req.query){
-        db.all('SELECT * FROM Codes WHERE code IN (' + req.query.code + ')', (err, rows) => {
-            if(err){
-                res.status(500).type('txt').send('SQL Error');
-            }
-            else{
-                let codes = getValues(rows, ['code', 'incident_type']);
-                res.status(200).type('json').send({codes}); // <-- you will need to change this
-                }
-        });
+        query = 'SELECT * FROM Codes WHERE code IN (' + req.query.code + ')'
     }
-    else{
-        db.all('SELECT * FROM Codes', (err, rows) => {
-            if(err){
-                res.status(500).type('txt').send('SQL Error');
+    db.all(query, (err, rows) => {
+        if(err){
+            res.status(500).type('txt').send('SQL Error');
+        }
+        else{
+            let codes = getValues(rows, ['code', 'incident_type']);
+            res.status(200).type('json').send(codes); // <-- you will need to change this
             }
-            else{
-                let codes = getValues(rows, ['code', 'incident_type']);
-                res.status(200).type('json').send({codes}); // <-- you will need to change this
-            }
-        });
-    }
-    
+    });
 });
 
 // GET request handler for neighborhoods
 app.get('/neighborhoods', (req, res) => {
+    let query = 'SELECT * FROM Neighborhoods';
     if('id' in req.query){
-        db.all('SELECT * FROM Neighborhoods WHERE neighborhood_number IN (' + req.query.id + ')', (err, rows) => {
-            if(err){
-                res.status(500).type('txt').send('SQL Error');
-            }
-            else{
-                let neighborhoods = getValues(rows, ['neighborhood_number', 'neighborhood_name']);
-                res.status(200).type('json').send({neighborhoods}); // <-- you will need to change this
-            }
-        });
+        query = 'SELECT * FROM Neighborhoods WHERE neighborhood_number IN (' + req.query.id + ')';
     }
-    else{
-        db.all('SELECT * FROM Neighborhoods', (err, rows) => {
-            if(err){
-                res.status(500).type('txt').send('SQL Error');
-            }
-            else{
-                let neighborhoods = getValues(rows, ['neighborhood_number', 'neighborhood_name']);
-                res.status(200).type('json').send({neighborhoods}); // <-- you will need to change this
-            }
-        });
-    }
+    db.all(query, (err, rows) => {
+        if(err){
+            res.status(500).type('txt').send('SQL Error');
+        }
+        else{
+            let neighborhoods = getValues(rows, ['neighborhood_number', 'neighborhood_name']);
+             res.status(200).type('json').send(neighborhoods); // <-- you will need to change this
+        }
+    });
 });
 
 // GET request handler for crime incidents
 app.get('/incidents', (req, res) => {
-    console.log(req.query); // query object (key-value pairs after the ? in the url)
+    let query = "SELECT * from Incidents";
+    let params = [];
+
+    //start
+    if(req.query.start_date) {
+        params.push("date_time >= '" + req.query.start_date + "'");
+    }
+    //end
+    if(req.query.end_date) {
+        params.push("date_time <= '" + req.query.end_date + "'");
+    }
+    //code
+    if(req.query.code) {
+        params.push("code IN (" + req.query.code + ")");
+    }
+    //grid
+    if(req.query.grid) {
+        params.push("police_grid IN (" + req.query.grid + ")");
+    }
+    //neighborhood
+    if(req.query.neighborhood) {
+        params.push("neighborhood_number IN (" + req.query.neighborhood + ")");
+    }
+
+
+    if (params.length >0) {
+        query += " WHERE " + params.join(" AND ");
+    }
+
+
+    //limit
+    query += " ORDER BY date_time DESC";
+    if(req.query.limit) {
+        query += " LIMIT " + req.query.limit;
+    }
+    else {
+        query += " LIMIT 1000";
+    }
+
+
+    //console.log(query);
+
+    let incidents = []
+    db.all(query, (err, rows) => {
+        if (err) {
+            console.log(err);
+            res.status(500).type('txt').send('SQL error');
+        }
+        else {
+            for(let row of rows){
+                incidents.push({
+                    case_number: row.case_number,
+                    date: row.date_time.substring(0, 10),      // YYYY-MM-DD
+                    time: row.date_time.substring(11, 19),     // HH:MM:SS
+
+                    code: row.code,
+                    incident: row.incident,
+                    police_grid: row.police_grid,
+                    neighborhood_number: row.neighborhood_number,
+                    block: row.block
+                });
+            }
+            //console.log(rows);
+            res.status(200).type('json').send(incidents);
+        }
+    });
     
-    res.status(200).type('json').send({}); // <-- you will need to change this
 });
 
 // PUT request handler for new crime incident
 app.put('/new-incident', async (req, res) => {
     console.log(req.body);
 
-    let {
+    let{
         case_number,
         date,
         time,
