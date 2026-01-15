@@ -169,8 +169,9 @@ app.get('/incidents', (req, res) => {
             for(let row of rows){
                 incidents.push({
                     case_number: row.case_number,
-                    date: row.date_time.substring(0, 10),
-                    time: row.date_time.substring(11, 19),
+                    date: row.date_time.substring(0, 10),      // YYYY-MM-DD
+                    time: row.date_time.substring(11, 19),     // HH:MM:SS
+
                     code: row.code,
                     incident: row.incident,
                     police_grid: row.police_grid,
@@ -178,6 +179,7 @@ app.get('/incidents', (req, res) => {
                     block: row.block
                 });
             }
+            console.log(rows);
             res.status(200).type('json').send(incidents);
         }
     });
